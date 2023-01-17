@@ -10,19 +10,25 @@ namespace DAL.Repositories.Concrete
     {
         public async Task AddBikeAsync(Bike bike)
         {
-            var bikeRoot = await GetBikesAsync();
+            var bikeRoot = await GetBikesInnerAsync();
             bikeRoot.Data.Bikes.Add(bike);
-            using (StreamWriter w = new StreamWriter("C:\\WebApi\\DAL\\Data\\bike.json"))
+            using (StreamWriter w = new StreamWriter("C:\\Users\\ugurc\\UgurcanOruc\\NTierAPIProject\\DAL\\Data\\bike.json"))
             {
                 string json = JsonSerializer.Serialize(bikeRoot);
                 await w.WriteAsync(json);
             }
         }
 
-        public async Task<BikeRoot> GetBikesAsync()
+        public async Task<List<Bike>> GetBikesAsync()
+        {
+            var root = await GetBikesInnerAsync();
+            return root.Data.Bikes;
+        }
+
+        private async Task<BikeRoot> GetBikesInnerAsync()
         {
             BikeRoot bikeRoot = new();
-            using (StreamReader r = new StreamReader("C:\\WebApi\\DAL\\Data\\bike.json"))
+            using (StreamReader r = new StreamReader("C:\\Users\\ugurc\\UgurcanOruc\\NTierAPIProject\\DAL\\Data\\bike.json"))
             {
                 string json = await r.ReadToEndAsync();
                 bikeRoot = JsonSerializer.Deserialize<BikeRoot>(json) ?? new();

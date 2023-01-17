@@ -18,15 +18,15 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public async Task<JsonResult> GetBikes()
+        public async Task<ActionResult> GetBikes()
         {
             var model = await _bikeRepo.GetBikesAsync();
             var result = JsonSerializer.Serialize(model);
-            return new JsonResult(result);
+            return Ok(result);
         }
 
         [HttpPost]
-        public async Task<OkResult> AddBike(Bike bike)
+        public async Task<ActionResult> AddBike(Bike bike)
         {
             await _bikeRepo.AddBikeAsync(bike);
             return Ok();

@@ -6,21 +6,16 @@ namespace DAL.Repositories.Concrete
 {
     public class StationRepository : IStationRepository
     {
-        public async Task AddStationAsync(Station station)
+        public async Task<List<Station>> GetStationsAsync()
         {
-            var stationRoot = await GetStationsAsync();
-            stationRoot.Data.Stations.Add(station);
-            using (StreamWriter w = new StreamWriter("C:\\WebApi\\DAL\\Data\\station.json"))
-            {
-                string json = JsonSerializer.Serialize(stationRoot);
-                await w.WriteAsync(json);
-            }
+            var root = await GetStationsInnerAsync();
+            return root.Data.Stations;
         }
 
-        public async Task<StationRoot> GetStationsAsync()
+        public async Task<StationRoot> GetStationsInnerAsync()
         {
             StationRoot stationRoot = new();
-            using (StreamReader r = new StreamReader("C:\\WebApi\\DAL\\Data\\station.json"))
+            using (StreamReader r = new StreamReader("C:\\Users\\ugurc\\UgurcanOruc\\NTierAPIProject\\DAL\\Data\\station.json"))
             {
                 string json = await r.ReadToEndAsync();
                 stationRoot = JsonSerializer.Deserialize<StationRoot>(json) ?? new();

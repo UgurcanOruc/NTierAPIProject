@@ -4,7 +4,7 @@ namespace DAL.Repositories.Abstract
 {
     public interface IBikeRepository
     {
-        Task<BikeRoot> GetBikesAsync();
+        Task<List<Bike>> GetBikesAsync();
         Task AddBikeAsync(Bike bike);
     }
 }
