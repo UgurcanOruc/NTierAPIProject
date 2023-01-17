@@ -3,35 +3,18 @@
     ViewData["Title"] = "Home Page";
 }
 
+
 <div class="row">
     <div class="col-md-12">
-        <button class="btn btn-primary">Add Bike</button>
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <td>Bike Name</td>
-                    <td>Station Name</td>
-                    <td>Station Address</td>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Model.Count > 0)
-                {
-                    foreach (var bike in Model)
-                    {
-                        <tr>
-                            <td>@bike.Name</td>
-                            <td>@bike.Station.Name</td>
-                            <td>@bike.Station.Address</td>
-                        </tr>
-                    }
-                }
-                else
-                {
-                    <tr>No Data</tr>
-                }
-            </tbody>
-        </table>
+        <a href="@Url.Action("CreateBike", "Home")" class="btn btn-primary">Add Bike</a>
+
+        <form id="searchForm" asp-action="Index">
+            <input type="text" name="search" id="searchBox" placeholder="Search on Bike Name, Station Name or Station Address" />
+            <input id="searchBtn" type="submit" value="search" class="btn btn-primary" />
+        </form>
+        <div data-bind='simpleGrid: gridViewModel' class="mt-1"> </div>
+        <button data-bind='click: sortByName'> Sort by name  </button>
+        <button data-bind='click: jumpToFirstPage, enable: gridViewModel.currentPageIndex'> Jump to first page </button>
     </div>
 </div>
 
@@ -41,72 +24,96 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.1/knockout-latest.js"
+        integrity="sha512-2AL/VEauKkZqQU9BHgnv48OhXcJPx9vdzxN1JrKDVc4FPU/MEE/BZ6d9l0mP7VmvLsjtYwqiYQpDskK9dG8KBA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://knockoutjs.com/examples/resources/knockout.simpleGrid.3.0.js"></script>
 <script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
 <script>
+    const modelData = JSON.parse('@Html.Raw(Json.Serialize(Model))');
+    $(document).ready(function () {
+        var PagedGridModel = function (items) {
+            this.items = ko.observableArray(items);
 
-    var stationDensities = null;
+            this.sortByName = function () {
+                this.items.sort(function (a, b) {
+                    return a.name < b.name ? -1 : 1;
+                });
+            };
 
-    $(() => {
-        $.ajax({
-            type: "GET",
-            url: '@Url.Action("GetStationDensity", "Home")',
-            contentType: "application/json; charset=utf-8",
-            success: function (recData) { debugger; stationDensities = recData; },
-        });
-    })
+            this.jumpToFirstPage = function () {
+                this.gridViewModel.currentPageIndex(0);
+            };
 
-
-    var array = stationDensities.forEach(station => {
-        return [station.StationName, stationBikeCount];
+            this.gridViewModel = new ko.simpleGrid.viewModel({
+                data: this.items,
+                columns: [
+                    { headerText: "Bike Name", rowText: "name" },
+                    { headerText: "Station Name", rowText: "stationName" },
+                    { headerText: "Station Address", rowText: "stationAddress" }
+                ],
+                pageSize: 10
+            });
+        };
+        ko.applyBindings(new PagedGridModel(modelData));
     });
 
 
+    $('#searchBtn').onClick(
+        function () {
+            var searchPharase = document.getElementById('searchBox').value;
+            if (searchPharase.length > 2) {
+                document.getElementById('searchForm').submit();
+            }
+        });
+
+    var stationDensities;
+    function callback(response) {
+        stationDensities = response;
+        console.log(stationDensities);
+    }
+
+    $.ajax({
+        'type': "GET",
+        'global': false,
+        'dataType': 'html',
+        url: '@Url.Action("GetStationDensity", "Home")',
+        'success': function (data) {
+            callback(data);
+        },
+    });
+
     Highcharts.chart('barChart', {
         chart: {
-            type: 'column'
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false,
+            type: 'pie'
         },
         title: {
-            text: 'Available Bike Count of Stations'
+            text: 'Station Densities'
         },
-
-        xAxis: {
-            type: 'category',
-            labels: {
-                rotation: -45,
-                style: {
-                    fontSize: '13px',
-                    fontFamily: 'Verdana, sans-serif'
+        accessibility: {
+            point: {
+                valueSuffix: '%'
+            }
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: true,
                 }
             }
-        },
-        yAxis: {
-            min: 0,
-            title: {
-                text: 'Bike Count'
-            }
-        },
-        legend: {
-            enabled: false
-        },
-        tooltip: {
-            pointFormat: 'Bike Count: <b>{point.y:.1f} millions</b>'
         },
         series: [{
-            name: 'Station Densities',
-            data: stationDensities,
-            dataLabels: {
-                enabled: true,
-                rotation: -90,
-                color: '#FFFFFF',
-                align: 'right',
-                format: '{point.y:.1f}',
-                y: 10,
-                style: {
-                    fontSize: '13px',
-                    fontFamily: 'Verdana, sans-serif'
-                }
-            }
+            name: 'Brands',
+            colorByPoint: true,
+            data: [stationDensities]
         }]
     });
 </script>

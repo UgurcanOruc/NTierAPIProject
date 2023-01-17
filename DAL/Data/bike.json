@@ -191,6 +191,15 @@
         "lat": 33.41675166666667,
         "is_reserved": 0,
         "is_disabled": 0
+      },
+      {
+        "bike_id": "bikeId-123",
+        "station_id": "hub_290",
+        "name": "Bianchi",
+        "lon": 0,
+        "lat": 0,
+        "is_reserved": 0,
+        "is_disabled": 1
       }
     ]
   }

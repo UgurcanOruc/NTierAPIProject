@@ -7,15 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="wwwroot\styles\knockout.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\styles\knockout.css" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="jslinq" Version="2.10.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.11" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DATA\DATA.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="wwwroot\css\" />
   </ItemGroup>
 
 </Project>

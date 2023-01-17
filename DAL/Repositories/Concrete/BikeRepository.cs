@@ -3,6 +3,8 @@ using DATA.Entities;
 using System.Text.Json;
 using System;
 using System.Runtime.CompilerServices;
+using System.Reflection;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DAL.Repositories.Concrete
 {
@@ -12,7 +14,7 @@ namespace DAL.Repositories.Concrete
         {
             var bikeRoot = await GetBikesInnerAsync();
             bikeRoot.Data.Bikes.Add(bike);
-            using (StreamWriter w = new StreamWriter("C:\\Users\\ugurc\\UgurcanOruc\\NTierAPIProject\\DAL\\Data\\bike.json"))
+            using (StreamWriter w = new StreamWriter("C:\\WebApi\\DAL\\Data\\bike.json"))
             {
                 string json = JsonSerializer.Serialize(bikeRoot);
                 await w.WriteAsync(json);
@@ -28,7 +30,7 @@ namespace DAL.Repositories.Concrete
         private async Task<BikeRoot> GetBikesInnerAsync()
         {
             BikeRoot bikeRoot = new();
-            using (StreamReader r = new StreamReader("C:\\Users\\ugurc\\UgurcanOruc\\NTierAPIProject\\DAL\\Data\\bike.json"))
+            using (StreamReader r = new StreamReader("C:\\WebApi\\DAL\\Data\\bike.json"))
             {
                 string json = await r.ReadToEndAsync();
                 bikeRoot = JsonSerializer.Deserialize<BikeRoot>(json) ?? new();

@@ -1,23 +1,33 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace DATA.Entities
 {
     public class Bike
     {
+        [Required]
         [JsonPropertyName("bike_id")]
         public string? BikeId { get; set; }
+        
+        [Required]
         [JsonPropertyName("station_id")]
         public string? StationId { get; set; }
+
+        [Required]
         [JsonPropertyName("name")]
         public string? Name { get; set; }
+        
         [JsonPropertyName("lon")]
         public double Longitude { get; set; }
+        
         [JsonPropertyName("lat")]
         public double Latitude { get; set; }
+        
         [JsonPropertyName("is_reserved")]
-        public int IsReversed { get; set; }
+        public int? IsReversed { get; set; }
+        
         [JsonPropertyName("is_disabled")]
-        public int IsDisabled { get; set; }
+        public int? IsDisabled { get; set; }
     }
 
     public class BikeData
@@ -30,8 +40,10 @@ namespace DATA.Entities
     {
         [JsonPropertyName("last_updated")]
         public int LastUpdated { get; set; }
+        
         [JsonPropertyName("ttl")]
         public int Ttl { get; set; }
+        
         [JsonPropertyName("data")]
         public BikeData Data { get; set; }
     }

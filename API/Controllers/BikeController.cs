@@ -18,6 +18,7 @@ namespace API.Controllers
         }
 
         [HttpGet]
+        [Route("[action]")]
         public async Task<ActionResult> GetBikes()
         {
             var model = await _bikeRepo.GetBikesAsync();
@@ -26,6 +27,7 @@ namespace API.Controllers
         }
 
         [HttpPost]
+        [Route("[action]")]
         public async Task<ActionResult> AddBike(Bike bike)
         {
             await _bikeRepo.AddBikeAsync(bike);

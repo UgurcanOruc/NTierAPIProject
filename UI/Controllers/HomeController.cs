@@ -1,19 +1,31 @@
 ﻿using DATA.Entities;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using System.Diagnostics;
-using UI.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using UI.Models.ViewModel;
 
 namespace UI.Controllers
 {
     public class HomeController : Controller
     {
-        public async Task<IActionResult> Index()
+        public async Task<ActionResult> Index(string? search)
         {
-            var model = await PrepareViewModel();
-
+            var model = await GetBikeList();
+            if (search != null)
+            {
+                model.Where(b => b.Name.ToLower().Contains(search.ToLower())
+                            || b.StationName.ToLower().Contains(search.ToLower())
+                            || b.StationAddress.ToLower().Contains(search.ToLower()));
+            }
             return View(model);
+        }
+        
+        public async Task<JsonResult> GetSearchResults(string search)
+        {
+            var bikeList = await GetBikeList();
+            bikeList.Where(b => b.Name.ToLower().Contains(search.ToLower())
+                            || b.StationName.ToLower().Contains(search.ToLower())
+                            || b.StationAddress.ToLower().Contains(search.ToLower()));
+            return new JsonResult(bikeList);
         }
 
         public async Task<JsonResult> GetStationDensity()
@@ -26,15 +38,47 @@ namespace UI.Controllers
                 model.Add(
                     new StationDensityViewModel()
                     {
-                        StationName = station.Name,
-                        BikeCount = bikes.Where(b => b.StationId == station.StationId).Count()
+                        Name = station.Name,
+                        Y = bikes.Where(b => b.StationId == station.StationId).Count()
                     }
                 );
             }
-            return new JsonResult(model);
+            return new JsonResult(model.Where(m => m.Y > 0).ToList());
         }
 
-        private async Task<List<BikeViewModel>> PrepareViewModel()
+        [HttpGet]
+        public async Task<ActionResult> CreateBike()
+        {
+            ViewBag.StationSelectList = await GetStationSelectList();
+            return View(new Bike());
+        }
+
+        [HttpPost]
+        public async Task<ActionResult> CreateBike(Bike model)
+        {
+            if (ModelState.IsValid)
+            {
+                var client = new HttpClient();
+                var x = await client.PostAsJsonAsync("https://localhost:7233/api/Bike/AddBike", model);
+                return RedirectToAction("Index");
+            }
+            ViewBag.StationSelectList = await GetStationSelectList();
+            return View(model);
+        }
+
+        public async Task<List<SelectListItem>> GetStationSelectList()
+        {
+            var stations = await GetStationsFromAPI();
+            var selectList = new List<SelectListItem>();
+            foreach (var station in stations.Distinct())
+            {
+                selectList.Add(new SelectListItem() { Text = station.Name, Value = station.StationId });
+            }
+
+            return selectList;
+        }
+
+        private async Task<List<BikeViewModel>> GetBikeList()
         {
             var bikes = await GetBikesFromAPI();
             var stations = await GetStationsFromAPI();
@@ -59,7 +103,7 @@ namespace UI.Controllers
             {
                 client.BaseAddress = new Uri("https://localhost:7233/api/");
 
-                var bikesResult = await client.GetAsync("Bike");
+                var bikesResult = await client.GetAsync("Bike/GetBikes");
                 if (bikesResult.IsSuccessStatusCode)
                 {
                     bikes = await bikesResult.Content.ReadFromJsonAsync<List<Bike>>();
@@ -86,16 +130,12 @@ namespace UI.Controllers
 
         private BikeViewModel GetBikeViewModel(Bike bike, List<Station> stations)
         {
+            var station = stations.Where(s => s.StationId == bike.StationId).FirstOrDefault() ?? new Station();
             return new BikeViewModel()
             {
-                BikeId = bike.BikeId,
-                StationId = bike.StationId,
-                Name = bike.Name,
-                Longitude = bike.Longitude,
-                Latitude = bike.Latitude,
-                IsReversed = bike.IsReversed,
-                IsDisabled = bike.IsDisabled,
-                Station = stations.Where(s => s.StationId == bike.StationId).FirstOrDefault() ?? new Station(),
+                Name = bike?.Name,
+                StationName = station?.Name,
+                StationAddress = station?.Address
             };
         }
     }
