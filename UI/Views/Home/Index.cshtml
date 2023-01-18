@@ -1,17 +1,20 @@
-﻿@model List<BikeViewModel>
+﻿@model HomeIndexViewModel
 @{
     ViewData["Title"] = "Home Page";
 }
 
-
 <div class="row">
     <div class="col-md-12">
-        <a href="@Url.Action("CreateBike", "Home")" class="btn btn-primary">Add Bike</a>
+        <div class="row ">
+            <div class="col-md-12 d-flex justify-content-between">
+                <form id="searchForm" asp-action="Index">
 
-        <form id="searchForm" asp-action="Index">
-            <input type="text" name="search" id="searchBox" placeholder="Search on Bike Name, Station Name or Station Address" />
-            <input id="searchBtn" type="submit" value="search" class="btn btn-primary" />
-        </form>
+                    <input type="text" asp-for="Search" id="searchBox" placeholder="Search on Bike Name, Station Name or Station Address" style="line-height: 2;" />
+                <input id="searchBtn" type="submit" value="Search" class="btn btn-primary mb-1" />
+            </form>
+            <a href="@Url.Action("CreateBike", "Home")" class="btn btn-primary">Add Bike</a>
+            </div>
+        </div>
         <div data-bind='simpleGrid: gridViewModel' class="mt-1"> </div>
         <button data-bind='click: sortByName'> Sort by name  </button>
         <button data-bind='click: jumpToFirstPage, enable: gridViewModel.currentPageIndex'> Jump to first page </button>
@@ -33,8 +36,9 @@
 <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
 <script>
-    const modelData = JSON.parse('@Html.Raw(Json.Serialize(Model))');
     $(document).ready(function () {
+        const modelData = JSON.parse('@Html.Raw(Json.Serialize(Model.Bikes))');
+
         var PagedGridModel = function (items) {
             this.items = ko.observableArray(items);
 
@@ -61,30 +65,12 @@
         ko.applyBindings(new PagedGridModel(modelData));
     });
 
-
-    $('#searchBtn').onClick(
-        function () {
-            var searchPharase = document.getElementById('searchBox').value;
-            if (searchPharase.length > 2) {
-                document.getElementById('searchForm').submit();
-            }
-        });
-
-    var stationDensities;
-    function callback(response) {
-        stationDensities = response;
-        console.log(stationDensities);
-    }
-
-    $.ajax({
-        'type': "GET",
-        'global': false,
-        'dataType': 'html',
-        url: '@Url.Action("GetStationDensity", "Home")',
-        'success': function (data) {
-            callback(data);
-        },
-    });
+    document.getElementById('searchBox').onkeyup = function () {
+        var searchPharase = document.getElementById('searchBox').value.trim();
+        if (searchPharase.length >= 3 || event.key === "Backspace") {
+            document.getElementById('searchForm').submit();
+        }
+    };
 
     Highcharts.chart('barChart', {
         chart: {
@@ -111,9 +97,9 @@
             }
         },
         series: [{
-            name: 'Brands',
+            name: 'Bikes',
             colorByPoint: true,
-            data: [stationDensities]
+            data: JSON.parse('@Html.Raw(Json.Serialize(Model.ChartModel))')
         }]
     });
 </script>

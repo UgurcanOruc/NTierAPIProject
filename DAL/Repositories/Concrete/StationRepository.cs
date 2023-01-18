@@ -15,7 +15,7 @@ namespace DAL.Repositories.Concrete
         public async Task<StationRoot> GetStationsInnerAsync()
         {
             StationRoot stationRoot = new();
-            using (StreamReader r = new StreamReader("C:\\WebApi\\DAL\\Data\\station.json"))
+            using (StreamReader r = new StreamReader("C:\\Users\\ugurc\\UgurcanOruc\\NTierAPIProject\\DAL\\Data\\station.json"))
             {
                 string json = await r.ReadToEndAsync();
                 stationRoot = JsonSerializer.Deserialize<StationRoot>(json) ?? new();

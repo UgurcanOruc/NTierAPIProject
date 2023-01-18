@@ -2,19 +2,23 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using UI.Models.ViewModel;
+using System.Linq;
 
 namespace UI.Controllers
 {
     public class HomeController : Controller
     {
-        public async Task<ActionResult> Index(string? search)
+        public async Task<ActionResult> Index(HomeIndexViewModel model)
         {
-            var model = await GetBikeList();
-            if (search != null)
+            model.Bikes = await GetBikeList();
+
+            if (model.ChartModel == null) model.ChartModel = await GetStationDensity();
+
+            if (model.Search != null)
             {
-                model.Where(b => b.Name.ToLower().Contains(search.ToLower())
-                            || b.StationName.ToLower().Contains(search.ToLower())
-                            || b.StationAddress.ToLower().Contains(search.ToLower()));
+                model.Bikes = model.Bikes.Where(b => b.Name.ToLower().Contains(model.Search.Trim().ToLower())
+                            || (b.StationName != null ? b.StationName.ToLower().Contains(model.Search.Trim().ToLower()) : false)
+                            ||(b.StationAddress != null ? b.StationAddress.ToLower().Contains(model.Search.Trim().ToLower()) : false)).ToList();
             }
             return View(model);
         }
@@ -28,7 +32,7 @@ namespace UI.Controllers
             return new JsonResult(bikeList);
         }
 
-        public async Task<JsonResult> GetStationDensity()
+        public async Task<List<StationDensityViewModel>> GetStationDensity()
         {
             var stations = await GetStationsFromAPI();
             var bikes = await GetBikesFromAPI();
@@ -43,7 +47,7 @@ namespace UI.Controllers
                     }
                 );
             }
-            return new JsonResult(model.Where(m => m.Y > 0).ToList());
+            return model.Where(m => m.Y > 0).ToList();
         }
 
         [HttpGet]
