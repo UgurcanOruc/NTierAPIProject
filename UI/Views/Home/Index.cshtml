@@ -73,7 +73,7 @@
         $(() => {
             $.ajax({
                 type: "GET",
-                url: window.location.origin + '/Home' + '/' + firstCharToUpper(actionName) + (urlData ? '&' + urlData : ''),
+                url: window.location.origin + '/Home' + '/' + firstCharToUpper(actionName),
                 contentType: "application/json; charset=utf-8",
                 success: function (recData) { successFunction(recData) },
             });
