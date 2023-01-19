@@ -8,31 +8,17 @@ namespace UI.Controllers
 {
     public class HomeController : Controller
     {
-        public async Task<ActionResult> Index(HomeIndexViewModel model)
+        public ActionResult Index()
         {
-            model.Bikes = await GetBikeList();
-
-            if (model.ChartModel == null) model.ChartModel = await GetStationDensity();
-
-            if (model.Search != null)
-            {
-                model.Bikes = model.Bikes.Where(b => b.Name.ToLower().Contains(model.Search.Trim().ToLower())
-                            || (b.StationName != null ? b.StationName.ToLower().Contains(model.Search.Trim().ToLower()) : false)
-                            ||(b.StationAddress != null ? b.StationAddress.ToLower().Contains(model.Search.Trim().ToLower()) : false)).ToList();
-            }
-            return View(model);
+            return View();
         }
         
-        public async Task<JsonResult> GetSearchResults(string search)
+        public async Task<JsonResult> GetBikeList()
         {
-            var bikeList = await GetBikeList();
-            bikeList.Where(b => b.Name.ToLower().Contains(search.ToLower())
-                            || b.StationName.ToLower().Contains(search.ToLower())
-                            || b.StationAddress.ToLower().Contains(search.ToLower()));
-            return new JsonResult(bikeList);
+            return new JsonResult(await GetBikeListAsync());
         }
 
-        public async Task<List<StationDensityViewModel>> GetStationDensity()
+        public async Task<JsonResult> GetStationDensity()
         {
             var stations = await GetStationsFromAPI();
             var bikes = await GetBikesFromAPI();
@@ -47,7 +33,7 @@ namespace UI.Controllers
                     }
                 );
             }
-            return model.Where(m => m.Y > 0).ToList();
+            return new JsonResult(model.Where(m => m.Y > 0).ToList());
         }
 
         [HttpGet]
@@ -82,7 +68,7 @@ namespace UI.Controllers
             return selectList;
         }
 
-        private async Task<List<BikeViewModel>> GetBikeList()
+        private async Task<List<BikeViewModel>> GetBikeListAsync()
         {
             var bikes = await GetBikesFromAPI();
             var stations = await GetStationsFromAPI();

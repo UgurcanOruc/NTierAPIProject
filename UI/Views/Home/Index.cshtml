@@ -6,23 +6,40 @@
 <div class="row">
     <div class="col-md-12">
         <div class="row ">
-            <div class="col-md-12 d-flex justify-content-between">
-                <form id="searchForm" asp-action="Index">
-
-                    <input type="text" asp-for="Search" id="searchBox" placeholder="Search on Bike Name, Station Name or Station Address" style="line-height: 2;" />
-                <input id="searchBtn" type="submit" value="Search" class="btn btn-primary mb-1" />
-            </form>
-            <a href="@Url.Action("CreateBike", "Home")" class="btn btn-primary">Add Bike</a>
+            <div class="col-md-12 d-flex justify-content-end mt-2">
+                <input type="text" id="searchBox" class="visually-hidden" placeholder="Search on Bike Name, Station Name or Station Address" style="line-height: 2;" />
+                <input id="searchBtn" type="submit" value="Search" class="btn btn-primary mb-1 visually-hidden" />
+                <a href="@Url.Action("CreateBike", "Home")" class="btn btn-primary">Add Bike</a>
             </div>
         </div>
-        <div data-bind='simpleGrid: gridViewModel' class="mt-1"> </div>
-        <button data-bind='click: sortByName'> Sort by name  </button>
-        <button data-bind='click: jumpToFirstPage, enable: gridViewModel.currentPageIndex'> Jump to first page </button>
+        <div id="bikes-spinner" class="d-flex justify-content-center visually-hidden mb-5">
+            <div class="spinner-border" role="status">
+                <span>Loading...</span>
+            </div>
+        </div>
+        <div id="bike-table" class="visually-hidden">
+            <input placeholder="Search…" type="search" name="q" data-bind="value: query, valueUpdate: 'keyup'" autocomplete="off">
+            <table class="table mb-5 ">
+                <thead>
+                    <tr>
+                        <th scope="col">Bike</th>
+                        <th scope="col">Station</th>
+                        <th scope="col">Station Address</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="template: {name:'bike', foreach:bikes}"> </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-12">
+        <div id="chart-spinner" class="d-flex justify-content-center visually-hidden">
+            <div class="spinner-border" role="status">
+                <span>Loading...</span>
+            </div>
+        </div>
         <div id="barChart"></div>
     </div>
 </div>
@@ -35,71 +52,92 @@
 <script src="https://code.highcharts.com/modules/export-data.js"></script>
 <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
+
+<script type="text/html" id="bike">
+    <tr>
+      <td data-bind="text: name"></td>
+      <td data-bind="text: stationName"></td>
+      <td data-bind="text: stationAddress"></td>
+    </tr>
+</script>
+
 <script>
     $(document).ready(function () {
-        const modelData = JSON.parse('@Html.Raw(Json.Serialize(Model.Bikes))');
-
-        var PagedGridModel = function (items) {
-            this.items = ko.observableArray(items);
-
-            this.sortByName = function () {
-                this.items.sort(function (a, b) {
-                    return a.name < b.name ? -1 : 1;
-                });
-            };
-
-            this.jumpToFirstPage = function () {
-                this.gridViewModel.currentPageIndex(0);
-            };
-
-            this.gridViewModel = new ko.simpleGrid.viewModel({
-                data: this.items,
-                columns: [
-                    { headerText: "Bike Name", rowText: "name" },
-                    { headerText: "Station Name", rowText: "stationName" },
-                    { headerText: "Station Address", rowText: "stationAddress" }
-                ],
-                pageSize: 10
-            });
-        };
-        ko.applyBindings(new PagedGridModel(modelData));
+        document.getElementById("bikes-spinner").classList.remove("visually-hidden");
+        document.getElementById("chart-spinner").classList.remove("visually-hidden");
+        ajaxCall('getbikelist', renderBikeList);
+        ajaxCall('getstationdensity', renderChartWithData);
     });
+
+    const ajaxCall = (actionName, successFunction, urlData) => {
+        $(() => {
+            $.ajax({
+                type: "GET",
+                url: window.location.origin + '/Home' + '/' + firstCharToUpper(actionName) + (urlData ? '&' + urlData : ''),
+                contentType: "application/json; charset=utf-8",
+                success: function (recData) { successFunction(recData) },
+            });
+        });
+    }
+
+    const firstCharToUpper = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
     document.getElementById('searchBox').onkeyup = function () {
         var searchPharase = document.getElementById('searchBox').value.trim();
         if (searchPharase.length >= 3 || event.key === "Backspace") {
-            document.getElementById('searchForm').submit();
+            ajaxCall('getbikelist', renderBikeList, searchPharase);
         }
     };
 
-    Highcharts.chart('barChart', {
-        chart: {
-            plotBackgroundColor: null,
-            plotBorderWidth: null,
-            plotShadow: false,
-            type: 'pie'
-        },
-        title: {
-            text: 'Station Densities'
-        },
-        accessibility: {
-            point: {
-                valueSuffix: '%'
-            }
-        },
-        plotOptions: {
-            pie: {
-                allowPointSelect: true,
-                cursor: 'pointer',
-                dataLabels: {
-                    enabled: true,
+    const renderBikeList = (data) => {
+        var viewModel = {
+            query: ko.observable('')
+        };
+
+        viewModel.bikes = ko.dependentObservable(function () {
+            var search = this.query().toLowerCase();
+            return ko.utils.arrayFilter(data, function (bike) {
+                return bike.name.toLowerCase().indexOf(search) >= 0;
+            });
+        }, viewModel);
+
+        ko.applyBindings(viewModel);
+
+        document.getElementById("bikes-spinner").classList.add("visually-hidden");
+        document.getElementById("bike-table").classList.remove("visually-hidden");
+    }
+
+    const renderChartWithData = (data) => {
+        Highcharts.chart('barChart', {
+            chart: {
+                plotBackgroundColor: null,
+                plotBorderWidth: null,
+                plotShadow: false,
+                type: 'pie'
+            },
+            title: {
+                text: 'Station Densities'
+            },
+            accessibility: {
+                point: {
+                    valueSuffix: '%'
                 }
-            }
-        },
-        series: [{
-            name: 'Bikes',
-            colorByPoint: true,
-            data: JSON.parse('@Html.Raw(Json.Serialize(Model.ChartModel))')
-        }]
-    });
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    dataLabels: {
+                        enabled: true,
+                    }
+                }
+            },
+            series: [{
+                name: 'Bikes',
+                colorByPoint: true,
+                data: data
+            }]
+        });
+        document.getElementById("chart-spinner").classList.add("visually-hidden");
+    }
 </script>
